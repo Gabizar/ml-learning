@@ -34,8 +34,10 @@ class SineNet(nn.Module):
         # nn.Linear(in, out) is a fully connected layer.
         # It creates a weight matrix of shape (in, out) and a bias of shape (out,)
         # automatically — no need to declare w1, b1 etc. by hand.
-        self.layer1 = nn.Linear(1, 32)   # 1 input → 32 hidden neurons
-        self.layer2 = nn.Linear(32, 1)   # 32 hidden → 1 output
+        # self.layer1 = nn.Linear(1, 32)   # 1 input → 32 hidden neurons
+        # self.layer2 = nn.Linear(32, 1)   # 32 hidden → 1 output
+        self.layer1 = nn.Linear(1, 128)
+        self.layer2 = nn.Linear(128, 1)
 
     def forward(self, x):
         # This is where you describe the flow of data through the network.
@@ -96,7 +98,8 @@ print("=" * 60)
 # (There are fancier optimizers like Adam, but SGD is the simplest.)
 
 learning_rate = 0.01
-optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+# optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 print(f"\noptimizer: {optimizer}")
 print(f"learning_rate: {learning_rate}")
 
@@ -134,7 +137,7 @@ print(f"y_true.shape: {y_true.shape}")
 
 print(f"\nTraining for 2000 steps...\n")
 
-for step in range(2000):
+for step in range(5000):
     # 1. Forward pass — call model like a function, it runs forward() internally
     y_pred = model(x_data)
 
@@ -201,6 +204,15 @@ save_path = "sine_model.pth"
 torch.save(model.state_dict(), save_path)
 print(f"\nModel saved to: {save_path}")
 print(f"state_dict keys: {list(model.state_dict().keys())}")
+
+# Also save as JSON so you can inspect the weights as human-readable numbers.
+# .tolist() converts a tensor to a nested Python list, which JSON can serialize.
+import json
+json_path = "sine_model.json"
+json_state = {key: val.tolist() for key, val in model.state_dict().items()}
+with open(json_path, "w") as f:
+    json.dump(json_state, f, indent=2)
+print(f"Model weights also saved as JSON to: {json_path}")
 
 # Loading: create a fresh model with the same architecture, then load weights
 model2 = SineNet().to(device)
