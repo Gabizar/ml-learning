@@ -235,33 +235,18 @@ sudo ./asus-ubuntu-builder.sh
 ### ROG GUI control panel (optional)
 If the community script installed it, run `rog-control-center` from the terminal or find it in your apps menu. It provides a graphical interface for all the above settings. Requires Wayland (Ubuntu 24.04 default).
 
-### Audio fix (if no sound output)
-Try these in order:
+### Audio fix (Cirrus Logic CS35L41 amplifiers)
+ROG laptops use Cirrus CS35L41 amplifiers that need a newer kernel. Install the Ubuntu HWE kernel:
+```bash
+sudo apt install -y linux-generic-hwe-24.04
+sudo reboot
+```
 
-1. Install SOF firmware:
-   ```bash
-   sudo apt install -y firmware-sof-signed
-   sudo reboot
-   ```
-
-2. If still no audio, add kernel parameter:
-   ```bash
-   sudo nano /etc/default/grub
-   ```
-   Change `GRUB_CMDLINE_LINUX_DEFAULT` to:
-   ```
-   GRUB_CMDLINE_LINUX_DEFAULT="quiet splash snd_hda_intel.dmic_detect=0"
-   ```
-   Then:
-   ```bash
-   sudo update-grub
-   sudo reboot
-   ```
-
-3. Check what PipeWire/PulseAudio sees:
-   ```bash
-   pactl list sinks short
-   ```
+Verify after reboot:
+```bash
+dmesg | grep cs35l41
+speaker-test -c 2 -t wav
+```
 
 ---
 
