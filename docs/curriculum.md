@@ -11,15 +11,15 @@ Learn ML/deep learning hands-on using Python + PyTorch. Hybrid approach: build f
 ---
 
 ## Current Status
-- **Current Step:** 0 (not started)
-- **Last Session:** 2026-03-12 — initial planning
+- **Current Step:** 2 (in progress)
+- **Last Session:** 2026-03-13 — GPU laptop verified, starting PyTorch basics
 
 ---
 
 ## Phase 1: Setup & Foundations
 
-- [ ] **Step 0** — Project setup: GitHub repo, project structure, requirements.txt
-- [ ] **Step 1** — GPU laptop setup: identify GPU, install CUDA, PyTorch, verify everything works
+- [x] **Step 0** — Project setup: GitHub repo, project structure, requirements.txt
+- [x] **Step 1** — GPU laptop setup: identify GPU, install CUDA, PyTorch, verify everything works
 - [ ] **Step 2** — PyTorch basics: tensors, operations, autograd (small script exercises)
 - [ ] **Step 3** — Core concepts: what is a neural net, layers, activation functions, loss, backprop (explained through code, not math)
 
