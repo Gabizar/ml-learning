@@ -15,3 +15,9 @@
 - **Script:** `step02_pytorch_basics.py` — covers tensors, GPU usage, autograd, and a mini neural net from scratch
 - **Concepts covered:** tensors, dot product, matrix multiply, broadcasting, unsqueeze/squeeze, GPU async, autograd, gradients, MSE loss, gradient descent, neurons, layers, bias, ReLU, activation functions, hidden layers
 - **Next:** Step 3 — nn.Module, building networks properly instead of managing raw tensors by hand
+
+## Session 3 — 2026-03-13
+- **Step:** 3 ✅
+- **What we did:** Built step03_nn_module.py — nn.Module, nn.Linear, SGD/Adam optimizers, MSELoss, training loop, inference mode, save/load (.pth and .json)
+- **Concepts covered:** nn.Module, nn.Linear, forward(), optimizer, loss functions, model.eval(), torch.no_grad(), state_dict, layer types, activation choices, optimizer choices
+- **Next:** Step 4 — load CIFAR-10 dataset, understand dataloaders

@@ -11,8 +11,8 @@ Learn ML/deep learning hands-on using Python + PyTorch. Hybrid approach: build f
 ---
 
 ## Current Status
-- **Current Step:** 3 (in progress)
-- **Last Session:** 2026-03-13 — Step 2 complete, starting nn.Module
+- **Current Step:** 4 (in progress)
+- **Last Session:** 2026-03-13 — Step 3 complete, starting CIFAR-10 dataset
 
 ---
 
@@ -21,7 +21,7 @@ Learn ML/deep learning hands-on using Python + PyTorch. Hybrid approach: build f
 - [x] **Step 0** — Project setup: GitHub repo, project structure, requirements.txt
 - [x] **Step 1** — GPU laptop setup: identify GPU, install CUDA, PyTorch, verify everything works
 - [x] **Step 2** — PyTorch basics: tensors, operations, autograd (small script exercises)
-- [ ] **Step 3** — Core concepts: what is a neural net, layers, activation functions, loss, backprop (explained through code, not math)
+- [x] **Step 3** — Core concepts: what is a neural net, layers, activation functions, loss, backprop (explained through code, not math)
 
 ## Phase 2: First Model (Image Classification)
 
