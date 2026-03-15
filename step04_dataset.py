@@ -107,6 +107,30 @@ for i in range(10):
     _, lbl = train_dataset[i]
     print(f"  sample {i}: label={lbl} ({class_names[lbl]})")
 
+# Save a grid of sample images to disk so you can view them.
+# We need a separate dataset WITHOUT normalize — normalized values can be
+# negative or >1 which don't map to valid pixel colors for display.
+import matplotlib
+matplotlib.use("Agg")   # no display window needed — saves to file
+import matplotlib.pyplot as plt
+
+viz_dataset = torchvision.datasets.CIFAR10(
+    root="./data", train=True, download=False,
+    transform=transforms.ToTensor()   # only ToTensor, no normalize
+)
+
+fig, axes = plt.subplots(4, 8, figsize=(12, 6))
+fig.suptitle("CIFAR-10 sample images", fontsize=14)
+for i, ax in enumerate(axes.flat):
+    img, lbl = viz_dataset[i]
+    ax.imshow(img.permute(1, 2, 0))  # (3,32,32) → (32,32,3) for matplotlib
+    ax.set_title(class_names[lbl], fontsize=7)
+    ax.axis("off")
+plt.tight_layout()
+plt.savefig("cifar10_samples.png", dpi=150)
+plt.close()
+print(f"\nSaved 32 sample images to: cifar10_samples.png")
+
 # ============================================================================
 # PART 4: DATALOADER — batching and shuffling automatically
 # ============================================================================
