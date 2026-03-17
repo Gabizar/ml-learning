@@ -34,5 +34,4 @@ logs/
 data/
 
 # Output files (ignore content, track directory structure via .gitkeep)
-output/**
-!output/**/.gitkeep
+output/
