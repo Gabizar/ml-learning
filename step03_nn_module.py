@@ -200,7 +200,10 @@ print("=" * 60)
 # state_dict = all the learned weights and biases as a dictionary
 # This is the standard way to save a trained model.
 
-save_path = "sine_model.pth"
+import os
+os.makedirs("output/step03", exist_ok=True)
+
+save_path = "output/step03/sine_model.pth"
 torch.save(model.state_dict(), save_path)
 print(f"\nModel saved to: {save_path}")
 print(f"state_dict keys: {list(model.state_dict().keys())}")
@@ -208,7 +211,7 @@ print(f"state_dict keys: {list(model.state_dict().keys())}")
 # Also save as JSON so you can inspect the weights as human-readable numbers.
 # .tolist() converts a tensor to a nested Python list, which JSON can serialize.
 import json
-json_path = "sine_model.json"
+json_path = "output/step03/sine_model.json"
 json_state = {key: val.tolist() for key, val in model.state_dict().items()}
 with open(json_path, "w") as f:
     json.dump(json_state, f, indent=2)

@@ -9,10 +9,13 @@ Usage:
     python step05_cnn.py
 """
 
+import os
 import torch
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
+
+os.makedirs("output/step05", exist_ok=True)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")
@@ -253,8 +256,8 @@ print("\n" + "=" * 60)
 print("PART 6: SAVE")
 print("=" * 60)
 
-torch.save(model.state_dict(), "cifar10_cnn.pth")
-print(f"\nModel saved to: cifar10_cnn.pth")
+torch.save(model.state_dict(), "output/step05/cifar10_cnn.pth")
+print(f"\nModel saved to: output/step05/cifar10_cnn.pth")
 
 print("\n" + "=" * 60)
 print("DONE! Key takeaways:")

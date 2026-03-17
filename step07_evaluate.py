@@ -21,6 +21,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import csv
+import os
+
+os.makedirs("output/step07", exist_ok=True)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")
@@ -114,7 +117,7 @@ print("=" * 60)
 # If accuracy peaks at epoch 8 then drops (overfitting), we still have epoch 8.
 
 best_acc = 0.0
-checkpoint_path = "cifar10_best.pth"
+checkpoint_path = "output/step07/cifar10_best.pth"
 
 num_epochs = 20
 history = {"train_loss": [], "train_acc": [], "test_acc": [], "lr": []}
@@ -212,16 +215,16 @@ ax2.set_ylabel("accuracy")
 ax2.legend()
 
 plt.tight_layout()
-plt.savefig("training_curves.png", dpi=150)
+plt.savefig("output/step07/training_curves.png", dpi=150)
 plt.close()
-print(f"\nSaved training curves to: training_curves.png")
+print(f"\nSaved training curves to: output/step07/training_curves.png")
 
-with open("training_curves.csv", "w", newline="") as f:
+with open("output/step07/training_curves.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["epoch", "train_loss", "train_acc", "test_acc", "lr"])
     for i in range(num_epochs):
         writer.writerow([i + 1, history["train_loss"][i], history["train_acc"][i], history["test_acc"][i], history["lr"][i]])
-print(f"Saved training curves data to: training_curves.csv")
+print(f"Saved training curves data to: output/step07/training_curves.csv")
 
 # ============================================================================
 # PART 6: PER-CLASS ACCURACY
@@ -301,17 +304,17 @@ for i in range(10):
 
 plt.colorbar(im)
 plt.tight_layout()
-plt.savefig("confusion_matrix.png", dpi=150)
+plt.savefig("output/step07/confusion_matrix.png", dpi=150)
 plt.close()
-print(f"\nSaved confusion matrix to: confusion_matrix.png")
+print(f"\nSaved confusion matrix to: output/step07/confusion_matrix.png")
 print("Diagonal = correct predictions. Off-diagonal = what it confused with what.")
 
-with open("confusion_matrix.csv", "w", newline="") as f:
+with open("output/step07/confusion_matrix.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["true \\ pred"] + class_names)
     for i, name in enumerate(class_names):
         writer.writerow([name] + confusion[i].tolist())
-print(f"Saved confusion matrix data to: confusion_matrix.csv")
+print(f"Saved confusion matrix data to: output/step07/confusion_matrix.csv")
 
 # ============================================================================
 # PART 8: SAMPLE PREDICTIONS
@@ -351,16 +354,16 @@ for i, ax in enumerate(axes.flat):
     sample_rows.append([i, class_names[true_label], class_names[pred_label], "correct" if correct else "wrong"])
 
 plt.tight_layout()
-plt.savefig("sample_predictions.png", dpi=150)
+plt.savefig("output/step07/sample_predictions.png", dpi=150)
 plt.close()
-print(f"\nSaved sample predictions to: sample_predictions.png")
+print(f"\nSaved sample predictions to: output/step07/sample_predictions.png")
 print("Title color: green = correct, red = wrong")
 
-with open("sample_predictions.csv", "w", newline="") as f:
+with open("output/step07/sample_predictions.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["index", "true_label", "predicted_label", "result"])
     writer.writerows(sample_rows)
-print(f"Saved sample predictions data to: sample_predictions.csv")
+print(f"Saved sample predictions data to: output/step07/sample_predictions.csv")
 
 print("\n" + "=" * 60)
 print("DONE! Key takeaways:")

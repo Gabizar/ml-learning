@@ -32,7 +32,7 @@ logs/
 
 # Data (downloaded datasets can be large)
 data/
-sine_model*
-cifar*samples*
-*.pth
-*.png
+
+# Output files (ignore content, track directory structure via .gitkeep)
+output/**
+!output/**/.gitkeep

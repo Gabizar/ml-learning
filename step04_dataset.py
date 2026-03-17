@@ -9,9 +9,12 @@ Usage:
     python step04_dataset.py
 """
 
+import os
 import torch
 import torchvision
 import torchvision.transforms as transforms
+
+os.makedirs("output/step04", exist_ok=True)
 
 # ============================================================================
 # PART 1: TRANSFORMS — preprocessing images before feeding them to a network
@@ -127,9 +130,9 @@ for i, ax in enumerate(axes.flat):
     ax.set_title(class_names[lbl], fontsize=7)
     ax.axis("off")
 plt.tight_layout()
-plt.savefig("cifar10_samples.png", dpi=150)
+plt.savefig("output/step04/cifar10_samples.png", dpi=150)
 plt.close()
-print(f"\nSaved 32 sample images to: cifar10_samples.png")
+print(f"\nSaved 32 sample images to: output/step04/cifar10_samples.png")
 
 # ============================================================================
 # PART 4: DATALOADER — batching and shuffling automatically

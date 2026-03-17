@@ -19,6 +19,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import csv
+import os
+
+os.makedirs("output/step07", exist_ok=True)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")
@@ -153,7 +156,7 @@ print("PART 4: TRAINING WITH CHECKPOINTING")
 print("=" * 60)
 
 best_acc = 0.0
-checkpoint_path = "cifar10_best_fix_overfitting.pth"
+checkpoint_path = "output/step07/cifar10_best_fix_overfitting.pth"
 
 num_epochs = 20
 history = {"train_loss": [], "train_acc": [], "test_acc": [], "lr": []}
@@ -246,11 +249,11 @@ ax2.set_ylabel("accuracy")
 ax2.legend()
 
 plt.tight_layout()
-plt.savefig("training_curves_fix_overfitting.png", dpi=150)
+plt.savefig("output/step07/training_curves_fix_overfitting.png", dpi=150)
 plt.close()
 print(f"\nSaved training curves to: training_curves_fix_overfitting.png")
 
-with open("training_curves_fix_overfitting.csv", "w", newline="") as f:
+with open("output/step07/training_curves_fix_overfitting.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["epoch", "train_loss", "train_acc", "test_acc", "lr"])
     for i in range(num_epochs):
@@ -323,11 +326,11 @@ for i in range(10):
 
 plt.colorbar(im)
 plt.tight_layout()
-plt.savefig("confusion_matrix_fix_overfitting.png", dpi=150)
+plt.savefig("output/step07/confusion_matrix_fix_overfitting.png", dpi=150)
 plt.close()
 print(f"\nSaved confusion matrix to: confusion_matrix_fix_overfitting.png")
 
-with open("confusion_matrix_fix_overfitting.csv", "w", newline="") as f:
+with open("output/step07/confusion_matrix_fix_overfitting.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["true \\ pred"] + class_names)
     for i, name in enumerate(class_names):
@@ -367,11 +370,11 @@ for i, ax in enumerate(axes.flat):
     sample_rows.append([i, class_names[true_label], class_names[pred_label], "correct" if correct else "wrong"])
 
 plt.tight_layout()
-plt.savefig("sample_predictions_fix_overfitting.png", dpi=150)
+plt.savefig("output/step07/sample_predictions_fix_overfitting.png", dpi=150)
 plt.close()
 print(f"\nSaved sample predictions to: sample_predictions_fix_overfitting.png")
 
-with open("sample_predictions_fix_overfitting.csv", "w", newline="") as f:
+with open("output/step07/sample_predictions_fix_overfitting.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["index", "true_label", "predicted_label", "result"])
     writer.writerows(sample_rows)
