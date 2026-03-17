@@ -21,3 +21,15 @@
 - **What we did:** Built step03_nn_module.py — nn.Module, nn.Linear, SGD/Adam optimizers, MSELoss, training loop, inference mode, save/load (.pth and .json)
 - **Concepts covered:** nn.Module, nn.Linear, forward(), optimizer, loss functions, model.eval(), torch.no_grad(), state_dict, layer types, activation choices, optimizer choices
 - **Next:** Step 4 — load CIFAR-10 dataset, understand dataloaders
+
+## Session 4 — 2026-03-15
+- **Step:** 4 ✅
+- **What we did:** Built step04_dataset.py — CIFAR-10 loading, transforms, DataLoader, batch inspection, image visualization
+- **Concepts covered:** transforms, ToTensor, Normalize, mean/std, PIL, batches, epochs, num_workers, DataLoader, dataset filesystem structure
+- **Next:** Step 5 — build a CNN to classify CIFAR-10 images
+
+## Session 5 — 2026-03-16
+- **Step:** 5 ✅
+- **What we did:** Built step05_cnn.py — full CNN for CIFAR-10 classification
+- **Concepts covered:** Conv2d, MaxPool2d, flatten, logits, CrossEntropyLoss, argmax, train/test accuracy, depth, spatial size, padding, filter output shape
+- **Next:** Step 6 — proper training loop with learning rate scheduling and better evaluation

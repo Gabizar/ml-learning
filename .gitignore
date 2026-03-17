@@ -32,3 +32,7 @@ logs/
 
 # Data (downloaded datasets can be large)
 data/
+sine_model*
+cifar*samples*
+*.pth
+*.png

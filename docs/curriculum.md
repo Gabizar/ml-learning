@@ -11,8 +11,8 @@ Learn ML/deep learning hands-on using Python + PyTorch. Hybrid approach: build f
 ---
 
 ## Current Status
-- **Current Step:** 4 (in progress)
-- **Last Session:** 2026-03-13 — Step 3 complete, starting CIFAR-10 dataset
+- **Current Step:** 7 (in progress)
+- **Last Session:** 2026-03-16 — Steps 5+6 combined and complete, starting evaluation
 
 ---
 
@@ -25,10 +25,9 @@ Learn ML/deep learning hands-on using Python + PyTorch. Hybrid approach: build f
 
 ## Phase 2: First Model (Image Classification)
 
-- [ ] **Step 4** — Load & explore a dataset (CIFAR-10 or similar), understand dataloaders
-- [ ] **Step 5** — Build a simple CNN from scratch in PyTorch
-- [ ] **Step 6** — Write the training loop manually (forward pass, loss, backward, optimizer)
-- [ ] **Step 7** — Train, evaluate, visualize results (accuracy, confusion matrix, sample predictions)
+- [x] **Step 4** — Load & explore a dataset (CIFAR-10 or similar), understand dataloaders
+- [x] **Step 5** — Build a simple CNN from scratch in PyTorch, including the full manual training loop (forward pass, loss, backward, optimizer) — steps 5+6 combined in step05_cnn.py
+- [ ] **Step 7** — Train, evaluate, visualize results (accuracy, confusion matrix, sample predictions, LR scheduling, checkpointing)
 
 ## Phase 3: Level Up (Transfer Learning)
 
