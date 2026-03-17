@@ -1,15 +1,13 @@
 """
-Step 7: Train, Evaluate, and Visualize
-=======================================
-Builds on Step 5 with:
-- Learning rate scheduling (reduce LR when progress stalls)
-- Model checkpointing (save best model during training, not just at the end)
-- Per-class accuracy
-- Confusion matrix
-- Sample prediction visualization
+Step 7 (Overfitting Fix): Same pipeline as step07_evaluate.py with three targeted fixes:
+  1. Data augmentation  — training images look slightly different each epoch
+  2. Dropout            — randomly disables neurons during training
+  3. Weight decay       — penalizes large weights via the optimizer
+
+Compare train_acc vs test_acc here against step07_evaluate.py to see the gap shrink.
 
 Usage:
-    python step07_evaluate.py
+    python step07_fix_overfitting.py
 """
 
 import torch
@@ -33,48 +31,88 @@ print("\n" + "=" * 60)
 print("PART 1: DATA")
 print("=" * 60)
 
-transform = transforms.Compose([
+# FIX 1: DATA AUGMENTATION
+# The original script fed the model the exact same 50k images every epoch.
+# The model eventually memorized them. Augmentation randomly transforms each
+# image before it's shown, so the model never sees the exact same thing twice.
+#
+# RandomHorizontalFlip — flip the image left-right 50% of the time.
+#   A cat facing left is still a cat. This doubles effective image variety.
+#
+# RandomCrop(32, padding=4) — pad the image by 4 pixels on each side, then
+#   randomly crop back to 32x32. Forces the model to recognize objects that
+#   are not perfectly centered. One of the most effective augmentations for CIFAR.
+#
+# These are only applied to the TRAINING set.
+# The test set uses plain ToTensor + Normalize — we evaluate on clean images.
+train_transform = transforms.Compose([
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomCrop(32, padding=4),
     transforms.ToTensor(),
     transforms.Normalize(mean=(0.4914, 0.4822, 0.4465),
                          std=(0.2470, 0.2435, 0.2616))
 ])
 
-train_dataset = torchvision.datasets.CIFAR10(root="./data", train=True,  download=True, transform=transform)
-test_dataset  = torchvision.datasets.CIFAR10(root="./data", train=False, download=True, transform=transform)
+test_transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize(mean=(0.4914, 0.4822, 0.4465),
+                         std=(0.2470, 0.2435, 0.2616))
+])
+
+train_dataset = torchvision.datasets.CIFAR10(root="./data", train=True,  download=True, transform=train_transform)
+test_dataset  = torchvision.datasets.CIFAR10(root="./data", train=False, download=True, transform=test_transform)
 
 train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True,  num_workers=4)
 test_loader  = torch.utils.data.DataLoader(test_dataset,  batch_size=64, shuffle=False, num_workers=4)
 
 class_names = train_dataset.classes
 print(f"\ntrain: {len(train_dataset)} samples, test: {len(test_dataset)} samples")
+print("train transform: RandomHorizontalFlip + RandomCrop + Normalize")
+print("test transform:  Normalize only")
 
 # ============================================================================
-# PART 2: MODEL — same CNN as Step 5
+# PART 2: MODEL
 # ============================================================================
 
 print("\n" + "=" * 60)
 print("PART 2: MODEL")
 print("=" * 60)
 
+# FIX 2: DROPOUT
+# Dropout randomly zeroes out a fraction of neuron outputs during training.
+# p=0.5 means each neuron has a 50% chance of being silenced each forward pass.
+#
+# Why it works: the network can't rely on any single neuron always being present,
+# so it's forced to learn redundant, distributed representations — which generalize
+# better to unseen data.
+#
+# Dropout is only active during training (model.train()).
+# During evaluation (model.eval()) it is automatically disabled — all neurons fire.
+# That's why switching between model.train() and model.eval() in the loop matters.
+#
+# Placement: after the first fully-connected layer, before the final classifier.
+# Putting it after conv layers is possible but less common for small CNNs.
 class SimpleCNN(nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv1 = nn.Conv2d(3,  32, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.pool  = nn.MaxPool2d(2, 2)
-        self.fc1   = nn.Linear(64 * 8 * 8, 256)
-        self.fc2   = nn.Linear(256, 10)
+        self.conv1   = nn.Conv2d(3,  32, kernel_size=3, padding=1)
+        self.conv2   = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.pool    = nn.MaxPool2d(2, 2)
+        self.fc1     = nn.Linear(64 * 8 * 8, 256)
+        self.dropout = nn.Dropout(p=0.5)   # <-- added: 50% dropout before classifier
+        self.fc2     = nn.Linear(256, 10)
 
     def forward(self, x):
         x = self.pool(self.conv1(x).relu())
         x = self.pool(self.conv2(x).relu())
         x = x.flatten(start_dim=1)
         x = self.fc1(x).relu()
+        x = self.dropout(x)                # <-- added: applied after fc1, before fc2
         return self.fc2(x)
 
 model = SimpleCNN().to(device)
 total_params = sum(p.numel() for p in model.parameters())
-print(f"\nmodel: SimpleCNN — {total_params:,} parameters")
+print(f"\nmodel: SimpleCNN with Dropout(0.5) — {total_params:,} parameters")
 
 # ============================================================================
 # PART 3: LOSS, OPTIMIZER, SCHEDULER
@@ -84,22 +122,27 @@ print("\n" + "=" * 60)
 print("PART 3: LOSS, OPTIMIZER, SCHEDULER")
 print("=" * 60)
 
-loss_fn   = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+loss_fn = nn.CrossEntropyLoss()
 
-# ReduceLROnPlateau — watches a metric (here: test accuracy) and reduces
-# the learning rate when it stops improving.
+# FIX 3: WEIGHT DECAY
+# Weight decay adds a penalty to the loss for having large weights.
+# After each update, weights are nudged slightly toward zero.
 #
-# mode="max"    → we're maximizing accuracy (use "min" for loss)
-# factor=0.5    → multiply lr by 0.5 when triggered (0.001 → 0.0005)
-# patience=3    → wait 3 epochs of no improvement before reducing
+# Why it works: large weights mean the model is making very confident, rigid
+# decisions based on specific training patterns. Keeping weights small forces
+# smoother, more general decision boundaries that work on unseen data.
+#
+# weight_decay=1e-4 is a standard starting value for CIFAR-10.
+# It's small enough not to hurt training, but enough to regularize.
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)  # <-- added weight_decay
+
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
     optimizer, mode="max", factor=0.5, patience=3
 )
 
-print(f"\nloss_fn:   CrossEntropyLoss")
-print(f"optimizer: Adam, initial lr=0.001")
-print(f"scheduler: ReduceLROnPlateau — halve lr after 3 epochs of no improvement")
+print(f"\nloss_fn:      CrossEntropyLoss")
+print(f"optimizer:    Adam, lr=0.001, weight_decay=1e-4")
+print(f"scheduler:    ReduceLROnPlateau — halve lr after 3 epochs of no improvement")
 
 # ============================================================================
 # PART 4: TRAINING LOOP WITH CHECKPOINTING
@@ -109,12 +152,8 @@ print("\n" + "=" * 60)
 print("PART 4: TRAINING WITH CHECKPOINTING")
 print("=" * 60)
 
-# CHECKPOINTING: save the model whenever test accuracy improves.
-# This way we always keep the best version, not just the final one.
-# If accuracy peaks at epoch 8 then drops (overfitting), we still have epoch 8.
-
 best_acc = 0.0
-checkpoint_path = "cifar10_best.pth"
+checkpoint_path = "cifar10_best_fix_overfitting.pth"
 
 num_epochs = 20
 history = {"train_loss": [], "train_acc": [], "test_acc": [], "lr": []}
@@ -157,7 +196,6 @@ for epoch in range(num_epochs):
     test_acc = correct / total
 
     # --- SCHEDULER STEP ---
-    # Pass test_acc so the scheduler knows whether we improved
     prev_lr = optimizer.param_groups[0]["lr"]
     scheduler.step(test_acc)
     new_lr = optimizer.param_groups[0]["lr"]
@@ -190,10 +228,6 @@ print("\n" + "=" * 60)
 print("PART 5: TRAINING CURVES")
 print("=" * 60)
 
-# Plot loss and accuracy over epochs to see how training progressed.
-# GAP between train_acc and test_acc = overfitting indicator.
-# If train_acc is much higher than test_acc, the model memorized training data.
-
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
 
 epochs = range(1, num_epochs + 1)
@@ -212,16 +246,16 @@ ax2.set_ylabel("accuracy")
 ax2.legend()
 
 plt.tight_layout()
-plt.savefig("training_curves.png", dpi=150)
+plt.savefig("training_curves_fix_overfitting.png", dpi=150)
 plt.close()
-print(f"\nSaved training curves to: training_curves.png")
+print(f"\nSaved training curves to: training_curves_fix_overfitting.png")
 
-with open("training_curves.csv", "w", newline="") as f:
+with open("training_curves_fix_overfitting.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["epoch", "train_loss", "train_acc", "test_acc", "lr"])
     for i in range(num_epochs):
         writer.writerow([i + 1, history["train_loss"][i], history["train_acc"][i], history["test_acc"][i], history["lr"][i]])
-print(f"Saved training curves data to: training_curves.csv")
+print(f"Saved training curves data to: training_curves_fix_overfitting.csv")
 
 # ============================================================================
 # PART 6: PER-CLASS ACCURACY
@@ -231,12 +265,10 @@ print("\n" + "=" * 60)
 print("PART 6: PER-CLASS ACCURACY")
 print("=" * 60)
 
-# Load the best checkpoint for evaluation
 model.load_state_dict(torch.load(checkpoint_path, weights_only=True))
 model.eval()
 print(f"\nLoaded best model from: {checkpoint_path}")
 
-# Track correct and total per class separately
 class_correct = [0] * 10
 class_total   = [0] * 10
 
@@ -265,14 +297,6 @@ print("\n" + "=" * 60)
 print("PART 7: CONFUSION MATRIX")
 print("=" * 60)
 
-# CONFUSION MATRIX: a 10×10 grid where:
-#   row    = true class
-#   column = predicted class
-#   cell   = how many times true=row was predicted as column
-#
-# Perfect model: only the diagonal has values (true=predicted every time).
-# Off-diagonal values reveal which classes the model confuses with each other.
-
 confusion = torch.zeros(10, 10, dtype=torch.int)
 
 with torch.no_grad():
@@ -282,7 +306,6 @@ with torch.no_grad():
         for true, pred in zip(labels, predicted):
             confusion[true][pred] += 1
 
-# Plot as a heatmap
 fig, ax = plt.subplots(figsize=(10, 8))
 im = ax.imshow(confusion.numpy(), cmap="Blues")
 ax.set_xticks(range(10))
@@ -293,7 +316,6 @@ ax.set_xlabel("Predicted")
 ax.set_ylabel("True")
 ax.set_title("Confusion Matrix")
 
-# Annotate each cell with its count
 for i in range(10):
     for j in range(10):
         ax.text(j, i, confusion[i][j].item(), ha="center", va="center", fontsize=8,
@@ -301,17 +323,16 @@ for i in range(10):
 
 plt.colorbar(im)
 plt.tight_layout()
-plt.savefig("confusion_matrix.png", dpi=150)
+plt.savefig("confusion_matrix_fix_overfitting.png", dpi=150)
 plt.close()
-print(f"\nSaved confusion matrix to: confusion_matrix.png")
-print("Diagonal = correct predictions. Off-diagonal = what it confused with what.")
+print(f"\nSaved confusion matrix to: confusion_matrix_fix_overfitting.png")
 
-with open("confusion_matrix.csv", "w", newline="") as f:
+with open("confusion_matrix_fix_overfitting.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["true \\ pred"] + class_names)
     for i, name in enumerate(class_names):
         writer.writerow([name] + confusion[i].tolist())
-print(f"Saved confusion matrix data to: confusion_matrix.csv")
+print(f"Saved confusion matrix data to: confusion_matrix_fix_overfitting.csv")
 
 # ============================================================================
 # PART 8: SAMPLE PREDICTIONS
@@ -320,9 +341,6 @@ print(f"Saved confusion matrix data to: confusion_matrix.csv")
 print("\n" + "=" * 60)
 print("PART 8: SAMPLE PREDICTIONS")
 print("=" * 60)
-
-# Visualize actual test images with true and predicted labels.
-# Use the unnormalized dataset for display (same reason as Step 4).
 
 viz_dataset = torchvision.datasets.CIFAR10(
     root="./data", train=False, download=False,
@@ -336,11 +354,9 @@ fig.suptitle("Sample predictions (green=correct, red=wrong)", fontsize=12)
 sample_rows = []
 for i, ax in enumerate(axes.flat):
     img, true_label = viz_dataset[i]
-
-    # Run through model — need normalized version for the model
     norm_img, _ = test_dataset[i]
     with torch.no_grad():
-        logits = model(norm_img.unsqueeze(0).to(device))  # add batch dim
+        logits = model(norm_img.unsqueeze(0).to(device))
         pred_label = logits.argmax(dim=1).item()
 
     ax.imshow(img.permute(1, 2, 0))
@@ -351,27 +367,31 @@ for i, ax in enumerate(axes.flat):
     sample_rows.append([i, class_names[true_label], class_names[pred_label], "correct" if correct else "wrong"])
 
 plt.tight_layout()
-plt.savefig("sample_predictions.png", dpi=150)
+plt.savefig("sample_predictions_fix_overfitting.png", dpi=150)
 plt.close()
-print(f"\nSaved sample predictions to: sample_predictions.png")
-print("Title color: green = correct, red = wrong")
+print(f"\nSaved sample predictions to: sample_predictions_fix_overfitting.png")
 
-with open("sample_predictions.csv", "w", newline="") as f:
+with open("sample_predictions_fix_overfitting.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["index", "true_label", "predicted_label", "result"])
     writer.writerows(sample_rows)
-print(f"Saved sample predictions data to: sample_predictions.csv")
+print(f"Saved sample predictions data to: sample_predictions_fix_overfitting.csv")
 
 print("\n" + "=" * 60)
-print("DONE! Key takeaways:")
+print("DONE! What changed vs step07_evaluate.py:")
 print("=" * 60)
 print("""
-1. LR scheduling reduces the learning rate when progress stalls — helps fine-tune
-2. Checkpointing saves the best model during training, not just the final one
-3. Per-class accuracy reveals which classes the model struggles with
-4. Confusion matrix shows which classes get confused with each other
-5. Gap between train_acc and test_acc = overfitting
-6. scheduler.step() is called after each epoch (not each batch) with the metric
+1. Data augmentation (RandomHorizontalFlip + RandomCrop)
+   — model sees different versions of each image every epoch
+   — most impactful fix for small datasets
 
-Next up (Step 8): Fine-tune a pretrained model (ResNet) on a custom dataset.
+2. Dropout(0.5) after fc1
+   — 50% of neurons randomly silenced each forward pass during training
+   — forces redundant learning, reduces reliance on memorized patterns
+
+3. Weight decay=1e-4 in Adam
+   — penalizes large weights, keeps decision boundaries smooth
+
+Expected result: train_acc comes down slightly, test_acc goes up,
+and the gap between them shrinks — that's less overfitting.
 """)
